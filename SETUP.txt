@@ -1,0 +1,218 @@
+================================================================================
+  LANGUAGE TEST RUNNER — SETUP & RUN GUIDE
+  T5 Localization Framework
+================================================================================
+
+What this does
+--------------
+Runs automated localization checks across 17 languages on 4 pages (Landing 5,
+Landing 6, Profile Subscription, Profile One-Time Pass). For each language it:
+  - Scans visible page text for raw/untranslated key patterns
+  - Scans visible page text against a known list of translation keys
+  - Takes a full-page screenshot
+  - Logs everything to a plain-text summary
+
+The subscribe and unsubscribe steps are a one-time transaction: the script
+subscribes ONCE (in English) and unsubscribes ONCE per device, and makes sure
+the subscription is cancelled before it exits. It is the localization checking
+that is repeated for every language and every device — both while subscribed
+(profile, thank-you, My Library) and while unsubscribed (shop pages, landing,
+confirmation).
+
+Results land in a timestamped folder under results/ so runs never overwrite
+each other.
+
+
+--------------------------------------------------------------------------------
+BEFORE YOU START — check these once
+--------------------------------------------------------------------------------
+
+1. Python installed?
+   Open a terminal and run:
+     py --version
+   You need 3.8 or higher. If you get an error, download Python from python.org
+   and make sure "Add to PATH" is checked during install.
+
+2. Google Chrome installed?
+   The script drives a real Chrome browser in headless mode (no window opens).
+   Chrome must be installed on your machine. The script handles the driver
+   automatically — you don't need to download ChromeDriver separately.
+
+3. You have access to the GitHub repository.
+   Clone it to your machine (one time only):
+
+     git clone https://github.com/your-username/T5-Localization.git
+
+   Replace the URL with the actual repo URL. This creates a T5-Localization\
+   folder with everything you need.
+
+
+--------------------------------------------------------------------------------
+STEP 1 — Open a terminal in the right folder
+--------------------------------------------------------------------------------
+
+Open PowerShell (or Command Prompt) and navigate to the project folder:
+
+  cd "path\to\project-folder"
+
+Replace the path above with wherever you placed the folder on your machine.
+All commands from here must be run from this folder.
+
+
+--------------------------------------------------------------------------------
+STEP 2 — Create a virtual environment (one time only)
+--------------------------------------------------------------------------------
+
+A virtual environment keeps the project's dependencies isolated from the rest
+of your machine. You only do this once.
+
+  py -m venv venv
+
+This creates a venv\ folder inside the project. Don't touch it.
+
+
+--------------------------------------------------------------------------------
+STEP 3 — Activate the virtual environment
+--------------------------------------------------------------------------------
+
+You need to do this every time you open a new terminal session.
+
+  venv\Scripts\activate
+
+Your prompt will change to show (venv) at the start — that means it's active.
+If you close the terminal and come back later, just run this line again.
+
+
+--------------------------------------------------------------------------------
+STEP 4 — Install dependencies (one time only)
+--------------------------------------------------------------------------------
+
+With the venv active:
+
+  pip install -r requirements.txt
+
+This installs Selenium (browser automation) and webdriver-manager (handles
+ChromeDriver automatically). Takes about a minute.
+You only need to do this once per machine.
+
+
+--------------------------------------------------------------------------------
+STEP 5 — Set the access token
+--------------------------------------------------------------------------------
+
+The script connects to the test environment using an access token. This must
+be set in your terminal session before running. Ask your team lead for the
+token value, then run:
+
+  $env:WAPSHOP_ACCESS_TOKEN = "paste-the-token-here"
+
+Important: this only lasts for the current terminal session. If you close and
+reopen the terminal, you need to set it again before running.
+
+If you want it to persist permanently so you never have to set it again:
+
+  [System.Environment]::SetEnvironmentVariable("WAPSHOP_ACCESS_TOKEN", "paste-the-token-here", "User")
+
+Then restart the terminal once. After that it's always available.
+
+
+--------------------------------------------------------------------------------
+STEP 6 — Run the script
+--------------------------------------------------------------------------------
+
+With the venv active and the token set:
+
+  python run.py
+
+This runs all tickets in the tickets\ folder. To run a specific ticket only:
+
+  python run.py tickets\TICKET_123_translation_keys.py
+
+The script will open Chrome in the background and work through all 17 languages
+across all 4 pages. Expect it to take a few minutes depending on page load times.
+You'll see no browser window — it's all running silently.
+
+
+--------------------------------------------------------------------------------
+STEP 7 — Find your results
+--------------------------------------------------------------------------------
+
+When the run finishes, a new folder is created automatically:
+
+  results\TICKET-123_YYYYMMDD_HHMMSS\
+
+Inside it:
+
+  summary.txt                        ← plain-text summary of what was flagged
+  screenshots\
+    landing5\                        ← one screenshot per language
+      EN.png
+      AR.png
+      DE.png  ...
+    landing6\
+    profile_subscription\
+    profile_one_time_pass\
+
+Each run gets its own timestamped folder, so nothing is ever overwritten.
+
+
+--------------------------------------------------------------------------------
+READING THE SUMMARY
+--------------------------------------------------------------------------------
+
+Open summary.txt. It shows:
+
+  Languages and pages tested
+  Total PASS / FAIL counts
+  For each failure:
+    - Raw keys found (regex patterns like {placeholder} or dot.notation.key)
+    - Raw translation keys found (known key names visible as plain text)
+    - Which check failed
+
+A PASS means the automated checks found nothing wrong. It does not replace
+manual screenshot review — see the checklist below.
+
+
+--------------------------------------------------------------------------------
+MANUAL REVIEW CHECKLIST (after automated run)
+--------------------------------------------------------------------------------
+
+Some things can't be caught automatically. After the run, open the screenshots
+and verify:
+
+  LP5 / LP6     offer labels are bold; no double colons; correct spacing before price
+  AR  (84)      RTL layout: colons appear on the LEFT side of labels
+  MY  (19)      Burmese uses "-" instead of ":" — confirm this is intentional;
+                check for missing glyph boxes (squares instead of characters)
+  TH  (72)      Thai: check for missing glyphs or placeholder squares
+  BR  (12)      "Ativa até:" and "Assinatura" — NOT "Ativo até:" / "Subscrição"
+  PT  (9)       "Ativo até:" and "Subscrição" — NOT "Ativa até:" / "Assinatura"
+  ES  (4)       "Tipo de acceso:" — NOT "Acceso de tipo:"
+  LE  (49)      "Acceso de tipo:" — NOT "Tipo de acceso:"
+
+  Profile (subscription)   access type reads "Subscription (recurring)" — translated
+  Profile (one-time pass)  access type reads "One-time pass" — NOT the recurring one
+
+
+--------------------------------------------------------------------------------
+QUICK REFERENCE — commands in order
+--------------------------------------------------------------------------------
+
+  git clone https://github.com/your-username/T5-Localization.git
+  cd T5-Localization
+  venv\Scripts\activate
+  $env:WAPSHOP_ACCESS_TOKEN = "your-token"
+  python run.py
+
+
+--------------------------------------------------------------------------------
+SOMETHING WENT WRONG?
+--------------------------------------------------------------------------------
+
+  ModuleNotFoundError    Run: pip install -r requirements.txt (venv must be active)
+  Token / access error   Re-set the env variable (Step 5) and try again
+  ChromeDriver error     Make sure Google Chrome is installed and up to date
+  Import errors          Make sure you're running from the project folder root
+                         and the venv is active
+
+================================================================================

@@ -1,6 +1,6 @@
 # T5 Localization — Emulated Device
 
-Automated 5-phase localization and UI-quality test for the T5 wapshop, driven by Selenium with Chrome DevTools mobile emulation. Runs across multiple configurable device/resolution presets without a physical device.
+Automated 6-phase localization and UI-quality test for the T5 wapshop, driven by Selenium with Chrome DevTools mobile emulation. Runs across multiple configurable device/resolution presets without a physical device.
 
 ## What it tests
 
@@ -13,17 +13,27 @@ For every language × page combination (unsubscribed state):
 
 For every language in subscribed state:
 - Profile settings page
+- Thank-you / success page
 - My Library — All Games, Favorite Games, My Downloads, All Videos, Favorite Videos, Recently Played
+
+For every language on the subscription-flow pages:
+- Landing page
+- Confirmation page (`wap_confirm=1`), when it is loadable by URL
+
+The subscribe and unsubscribe **transactions** each run once per device (in EN).
+The localization **checks** — unsubscribed (Phases 2 & 6) and subscribed (Phase 4)
+— are mandatory for every language and every device.
 
 ## Phases (per device)
 
 | # | Phase | Detail |
 |---|-------|--------|
 | 1 | Crawl | EN only — discovers up to 3 APK games, 3 HTML5 games, 3 videos, 5 other pages from `index.php` |
-| 2 | Unsubscribed checks | All 17 languages × all crawled pages |
+| 2 | Unsubscribed checks | **All 17 languages** × all crawled pages |
 | 3 | Subscribe once | EN — JOIN NOW → CONFIRM → poll for success URL |
-| 4 | Subscribed checks | All 17 languages × profile + 6 My Library sub-views |
-| 5 | Unsubscribe once | MANAGE SUBSCRIPTION → CANCEL SUBSCRIPTION |
+| 4 | Subscribed checks | **All 17 languages** × profile + thank-you + 6 My Library sub-views |
+| 5 | Unsubscribe once | MANAGE SUBSCRIPTION → CANCEL SUBSCRIPTION (+ post-Phase-6 safety re-check) |
+| 6 | Subscription-flow pages | **All 17 languages** × landing + confirmation, by URL only, after unsubscribe |
 
 ## Devices
 
@@ -85,10 +95,10 @@ Each run creates one timestamped folder with per-device subfolders:
 ```
 results/crawl_YYYYMMDD_HHMMSS/
   pixel_5/
-    screenshots/          EN_index.png  AR_index.png  ...
+    screenshots/          EN_index.png … plus EN_landing, EN_landing_confirm, EN_thankyou per language
     flagged/              copies of screenshots with hard failures
-    summary.txt           pass/fail counts + flagged details
-    subscription_recording.mp4
+    summary.txt           pass/fail counts + flagged details + subscription notes
+    subscription_recording.mp4   one-time subscription flow (EN)
   samsung_galaxy_s20_ultra/
     ...
 ```
@@ -99,7 +109,7 @@ Advisory only (logged, not flagged): contrast ratio < 4.5, font size < 10px
 ## Project structure
 
 ```
-run.py                  # 5-phase orchestrator + argparse --lang / --device
+run.py                  # 6-phase orchestrator + argparse --lang / --device
 config/
   settings.py           # env vars + timing constants
   languages.py          # LANGUAGE_IDS, LANGUAGES, LANG_DETECT_MAP
