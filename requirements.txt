@@ -1,0 +1,6 @@
+selenium
+webdriver-manager
+langdetect
+python-dotenv
+imageio
+imageio-ffmpeg

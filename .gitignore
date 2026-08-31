@@ -1,0 +1,18 @@
+# Virtual environment
+venv/
+
+# Test output — never commit results, screenshots, or reports
+results/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment / secrets — the access token must never be committed
+.env
+.env.*
+
+# OS noise
+.DS_Store
+Thumbs.db
